@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Statistics - Running Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1><i class="fas fa-chart-bar"></i> Running Statistics</h1>
+        <p class="text-muted">Analyze your running progress and achievements</p>
+    </div>
+</div>
+
+{% if stats %}
+<!-- Overall Statistics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-road"></i></h3>
+                <h4>{{ "%.1f"|format(stats.total_distance) }} km</h4>
+                <p class="mb-0">Total Distance</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-list"></i></h3>
+                <h4>{{ stats.total_runs }}</h4>
+                <p class="mb-0">Total Runs</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-chart-line"></i></h3>
+                <h4>{{ "%.1f"|format(stats.avg_distance) }} km</h4>
+                <p class="mb-0">Average Distance</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stats-card text-center">
+            <div class="card-body">
+                <h3><i class="fas fa-clock"></i></h3>
+                <h4>{{ "%.0f"|format(stats.avg_duration) if stats.avg_duration else 'N/A' }} min</h4>
+                <p class="mb-0">Avg Duration</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header section-header">
+                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Progress Charts</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-center mb-3">Distance Over Time</h6>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="distanceChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-4">
+                        <h6 class="text-center mb-3">Cumulative Distance</h6>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="cumulativeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-4 mx-auto">
+                        <h6 class="text-center mb-3">Monthly Averages</h6>
+                        <div class="chart-container" style="position: relative; height: 300px;">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Personal Records -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header section-header">
+                <h5 class="mb-0"><i class="fas fa-trophy"></i> Personal Records</h5>
+            </div>
+            <div class="card-body">
+                {% if stats.longest_run %}
+                <div class="mb-3">
+                    <strong>Longest Run:</strong>
+                    <span class="badge bg-success">{{ "%.1f"|format(stats.longest_run.distance) }} km</span>
+                    <small class="text-muted">on {{ stats.longest_run.date.strftime('%Y-%m-%d') }}</small>
+                </div>
+                {% endif %}
+                
+                {% if stats.fastest_pace %}
+                <div class="mb-3">
+                    <strong>Best Pace:</strong>
+                    <span class="badge bg-info">{{ "%.2f"|format(stats.fastest_pace.pace) }} min/km</span>
+                    <small class="text-muted">on {{ stats.fastest_pace.date.strftime('%Y-%m-%d') }}</small>
+                </div>
+                {% endif %}
+                
+                {% if stats.total_duration %}
+                <div class="mb-3">
+                    <strong>Total Time Running:</strong>
+                    <span class="badge bg-warning">{{ "%.0f"|format(stats.total_duration) }} minutes</span>
+                    <small class="text-muted">({{ "%.1f"|format(stats.total_duration / 60) }} hours)</small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calendar-alt"></i> Monthly Breakdown</h5>
+            </div>
+            <div class="card-body">
+                {% if stats.monthly_stats %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Runs</th>
+                                    <th>Distance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for month, data in stats.monthly_stats.items() %}
+                                <tr>
+                                    <td>{{ month }}</td>
+                                    <td>{{ data.runs }}</td>
+                                    <td>{{ "%.1f"|format(data.distance) }} km</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">No monthly data available yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Goals and Motivation -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bullseye"></i> Progress Insights</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <div class="mb-2">
+                                {% set weekly_goal = 20 %}
+                                {% set weekly_progress = (stats.total_distance / stats.total_runs * 7) if stats.total_runs > 0 else 0 %}
+                                <div class="progress mb-2">
+                                    <div class="progress-bar" style="width: {{ (weekly_progress / weekly_goal * 100) if weekly_progress < weekly_goal else 100 }}%"></div>
+                                </div>
+                                <small>Weekly Goal Progress</small>
+                                <br><strong>{{ "%.1f"|format(weekly_progress) }} / {{ weekly_goal }} km</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ "%.0f"|format((stats.total_distance / 42.195) * 100) if stats.total_distance else 0 }}%</h4>
+                            <small>Progress to Marathon Distance</small>
+                            <br><small class="text-muted">Total distance vs 42.195km</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <h4 class="text-success">{{ stats.total_runs }}</h4>
+                            <small>Running Streak</small>
+                            <br><small class="text-muted">Total runs completed</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">No statistics available yet!</h5>
+                <p class="text-muted">Start logging your runs to see detailed statistics and progress tracking.</p>
+                <a href="{{ url_for('add_run') }}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Log Your First Run
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if chart_data %}
+<script>
+// Chart.js configuration
+Chart.defaults.font.family = 'Inter, system-ui, sans-serif';
+Chart.defaults.color = '#6c757d';
+
+// Color scheme
+const colors = {
+    primary: '#667eea',
+    secondary: '#764ba2',
+    success: '#28a745',
+    info: '#17a2b8',
+    warning: '#ffc107',
+    danger: '#dc3545'
+};
+
+// Distance Over Time Chart
+const distanceCtx = document.getElementById('distanceChart').getContext('2d');
+new Chart(distanceCtx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_data.distance_over_time.dates | tojson }},
+        datasets: [{
+            label: 'Distance (km)',
+            data: {{ chart_data.distance_over_time.distances | tojson }},
+            borderColor: colors.primary,
+            backgroundColor: colors.primary + '20',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: colors.primary,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Distance (km)'
+                },
+                grid: {
+                    color: '#e9ecef'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Date'
+                },
+                grid: {
+                    display: false
+                }
+            }
+        },
+        elements: {
+            point: {
+                hoverRadius: 8
+            }
+        }
+    }
+});
+
+// Cumulative Distance Chart
+const cumulativeCtx = document.getElementById('cumulativeChart').getContext('2d');
+new Chart(cumulativeCtx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_data.distance_over_time.dates | tojson }},
+        datasets: [{
+            label: 'Cumulative Distance (km)',
+            data: {{ chart_data.distance_over_time.cumulative_distances | tojson }},
+            borderColor: colors.success,
+            backgroundColor: colors.success + '20',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: colors.success,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            pointRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                title: {
+                    display: true,
+                    text: 'Total Distance (km)'
+                },
+                grid: {
+                    color: '#e9ecef'
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Date'
+                },
+                grid: {
+                    display: false
+                }
+            }
+        },
+        elements: {
+            point: {
+                hoverRadius: 8
+            }
+        }
+    }
+});
+
+// Monthly Averages Chart
+const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+new Chart(monthlyCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ chart_data.monthly_averages.months | tojson }},
+        datasets: [{
+            label: 'Avg Distance (km)',
+            data: {{ chart_data.monthly_averages.avg_distances | tojson }},
+            backgroundColor: colors.info + '80',
+            borderColor: colors.info,
+            borderWidth: 2,
+            yAxisID: 'y'
+        }, {
+            label: 'Avg Duration (min)',
+            data: {{ chart_data.monthly_averages.avg_durations | tojson }},
+            backgroundColor: colors.secondary + '80',
+            borderColor: colors.secondary,
+            borderWidth: 2,
+            yAxisID: 'y1'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        aspectRatio: 2,
+        plugins: {
+            legend: {
+                display: true,
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                type: 'linear',
+                display: true,
+                position: 'left',
+                title: {
+                    display: true,
+                    text: 'Distance (km)'
+                },
+                grid: {
+                    color: '#e9ecef'
+                }
+            },
+            y1: {
+                type: 'linear',
+                display: true,
+                position: 'right',
+                title: {
+                    display: true,
+                    text: 'Duration (min)'
+                },
+                grid: {
+                    drawOnChartArea: false
+                }
+            },
+            x: {
+                title: {
+                    display: true,
+                    text: 'Month'
+                }
+            }
+        }
+    }
+});
+</script>
+{% endif %}
+{% endblock %}

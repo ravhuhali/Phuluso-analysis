@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Add Run - Running Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-plus"></i> Log New Run</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="date" class="form-label">Date</label>
+                                <input type="date" class="form-control" id="date" name="date" 
+                                       value="{{ today }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="distance" class="form-label">Distance (km) *</label>
+                                <input type="number" class="form-control" id="distance" name="distance" 
+                                       step="0.1" min="0.1" placeholder="e.g., 5.2" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="duration" class="form-label">Duration (minutes)</label>
+                                <input type="number" class="form-control" id="duration" name="duration" 
+                                       min="1" placeholder="e.g., 30">
+                                <small class="form-text text-muted">Optional - used to calculate pace</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label">Estimated Pace</label>
+                                <input type="text" class="form-control" id="estimated-pace" readonly 
+                                       placeholder="Enter distance and duration">
+                                <small class="form-text text-muted">Automatically calculated</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="How did the run feel? Weather conditions? Route taken?"></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Log Run
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculate pace automatically
+function calculatePace() {
+    const distance = parseFloat(document.getElementById('distance').value);
+    const duration = parseFloat(document.getElementById('duration').value);
+    const paceField = document.getElementById('estimated-pace');
+    
+    if (distance && duration) {
+        const pace = duration / distance;
+        paceField.value = pace.toFixed(2) + ' min/km';
+    } else {
+        paceField.value = '';
+    }
+}
+
+document.getElementById('distance').addEventListener('input', calculatePace);
+document.getElementById('duration').addEventListener('input', calculatePace);
+</script>
+{% endblock %}

@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}Find Gyms in Polokwane - Fitness Tracker{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="fas fa-map-marker-alt"></i> Find Gyms</h1>
+            <span class="badge bg-primary fs-6">{{ gyms|length }} Gyms Found</span>
+        </div>
+    </div>
+</div>
+
+<!-- City Search Form -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('map_page') }}" class="row g-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" 
+                                   class="form-control" 
+                                   name="city" 
+                                   value="{{ current_city }}" 
+                                   placeholder="Enter city name (e.g., Polokwane, Johannesburg, Cape Town)"
+                                   required>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Search Gyms
+                        </button>
+                    </div>
+                </form>
+                <div class="mt-2">
+                    <small class="text-muted">
+                        <strong>Popular cities:</strong>
+                        <a href="{{ url_for('map_page', city='Polokwane') }}" class="text-decoration-none me-2">Polokwane</a>
+                        <a href="{{ url_for('map_page', city='Johannesburg') }}" class="text-decoration-none me-2">Johannesburg</a>
+                        <a href="{{ url_for('map_page', city='Cape Town') }}" class="text-decoration-none me-2">Cape Town</a>
+                        <a href="{{ url_for('map_page', city='Durban') }}" class="text-decoration-none me-2">Durban</a>
+                        <a href="{{ url_for('map_page', city='Pretoria') }}" class="text-decoration-none">Pretoria</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Location Display -->
+<div class="row mb-3">
+    <div class="col-md-12">
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="fas fa-info-circle me-2"></i>
+            <span>Showing gyms in <strong>{{ current_city.title() }}</strong></span>
+        </div>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-map"></i> Interactive Map</h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" style="height: 500px; width: 100%;"></div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gym List Sidebar -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-list"></i> Gym Directory</h5>
+            </div>
+            <div class="card-body" style="max-height: 500px; overflow-y: auto;">
+                {% for gym in gyms %}
+                <div class="gym-card mb-3 p-3 border rounded" data-gym-id="{{ loop.index0 }}">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="gym-name mb-1">{{ gym.name }}</h6>
+                        <span class="badge bg-{{ 'success' if gym.type == 'Premium Gym' else 'info' if gym.type == '24/7 Gym' else 'warning' if gym.type == 'Budget Gym' else 'secondary' }}">
+                            {{ gym.type }}
+                        </span>
+                    </div>
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-map-marker-alt"></i> {{ gym.address }}
+                    </p>
+                    <p class="text-muted small mb-2">
+                        <i class="fas fa-phone"></i> {{ gym.phone }}
+                    </p>
+                    <div class="amenities">
+                        <small class="text-muted">Amenities:</small><br>
+                        {% for amenity in gym.amenities %}
+                            <span class="badge bg-light text-dark me-1 mb-1">{{ amenity }}</span>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary mt-2 focus-gym-btn" data-lat="{{ gym.lat }}" data-lng="{{ gym.lng }}" data-name="{{ gym.name }}">
+                        <i class="fas fa-eye"></i> View on Map
+                    </button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Legend -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <h6><i class="fas fa-info-circle"></i> Map Legend</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="legend-marker bg-success me-2"></div>
+                            <span>Premium Gyms</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="legend-marker bg-info me-2"></div>
+                            <span>24/7 Access Gyms</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="legend-marker bg-warning me-2"></div>
+                            <span>Budget Gyms</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="legend-marker bg-secondary me-2"></div>
+                            <span>Specialized Gyms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- Leaflet CSS and JS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+.gym-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.gym-card:hover {
+    background-color: #f8f9fa;
+    border-color: #667eea !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.gym-card.active {
+    background-color: #e3f2fd;
+    border-color: #667eea !important;
+    border-width: 2px !important;
+}
+
+.legend-marker {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.leaflet-popup-content {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.leaflet-popup-content h6 {
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.popup-amenities {
+    margin-top: 8px;
+}
+
+.popup-amenities .badge {
+    font-size: 0.7rem;
+}
+</style>
+
+<script>
+// Initialize map centered on Polokwane
+const map = L.map('map').setView([{{ center.lat }}, {{ center.lng }}], 12);
+
+// Add OpenStreetMap tiles
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+}).addTo(map);
+
+// Gym data from Flask
+const gyms = {{ gyms | tojson }};
+const markers = [];
+
+// Function to get marker color based on gym type
+function getMarkerColor(gymType) {
+    switch(gymType) {
+        case 'Premium Gym': return '#28a745';  // Green
+        case '24/7 Gym': return '#17a2b8';     // Info blue
+        case 'Budget Gym': return '#ffc107';   // Warning yellow
+        case 'Women Only': return '#e83e8c';   // Pink
+        case 'CrossFit Box': return '#fd7e14'; // Orange
+        default: return '#6c757d';             // Secondary gray
+    }
+}
+
+// Create custom icon
+function createCustomIcon(color) {
+    return L.divIcon({
+        html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>`,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+        popupAnchor: [0, -10]
+    });
+}
+
+// Add gym markers to map
+gyms.forEach((gym, index) => {
+    const color = getMarkerColor(gym.type);
+    const icon = createCustomIcon(color);
+    
+    const marker = L.marker([gym.lat, gym.lng], { icon: icon }).addTo(map);
+    
+    // Create popup content
+    const amenitiesBadges = gym.amenities.map(amenity => 
+        `<span class="badge bg-light text-dark me-1">${amenity}</span>`
+    ).join('');
+    
+    const popupContent = `
+        <div style="min-width: 200px;">
+            <h6 style="color: #333; margin-bottom: 8px;">
+                <i class="fas fa-dumbbell" style="color: ${color};"></i> ${gym.name}
+            </h6>
+            <p style="margin: 4px 0; color: #666; font-size: 0.9rem;">
+                <i class="fas fa-map-marker-alt"></i> ${gym.address}
+            </p>
+            <p style="margin: 4px 0; color: #666; font-size: 0.9rem;">
+                <i class="fas fa-phone"></i> ${gym.phone}
+            </p>
+            <p style="margin: 4px 0; color: #666; font-size: 0.9rem;">
+                <span class="badge" style="background-color: ${color};">${gym.type}</span>
+            </p>
+            <div class="popup-amenities">
+                <small style="color: #888;">Amenities:</small><br>
+                ${amenitiesBadges}
+            </div>
+        </div>
+    `;
+    
+    marker.bindPopup(popupContent);
+    markers.push(marker);
+    
+    // Add click event to highlight corresponding gym card
+    marker.on('click', function() {
+        highlightGymCard(index);
+    });
+});
+
+// Function to highlight gym card
+function highlightGymCard(index) {
+    // Remove active class from all cards
+    document.querySelectorAll('.gym-card').forEach(card => {
+        card.classList.remove('active');
+    });
+    
+    // Add active class to selected card
+    const selectedCard = document.querySelector(`[data-gym-id="${index}"]`);
+    if (selectedCard) {
+        selectedCard.classList.add('active');
+        selectedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Add click event to gym cards
+document.querySelectorAll('.gym-card').forEach((card, index) => {
+    card.addEventListener('click', function() {
+        highlightGymCard(index);
+        markers[index].openPopup();
+        map.setView([gyms[index].lat, gyms[index].lng], 15);
+    });
+});
+
+// Add click event to "View on Map" buttons
+document.querySelectorAll('.focus-gym-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const lat = parseFloat(this.getAttribute('data-lat'));
+        const lng = parseFloat(this.getAttribute('data-lng'));
+        const name = this.getAttribute('data-name');
+        
+        // Find the marker and open its popup
+        const marker = markers.find(m => {
+            const markerLatLng = m.getLatLng();
+            return Math.abs(markerLatLng.lat - lat) < 0.0001 && Math.abs(markerLatLng.lng - lng) < 0.0001;
+        });
+        
+        if (marker) {
+            map.setView([lat, lng], 16);
+            marker.openPopup();
+        }
+    });
+});
+
+// Add location control (find user's location)
+if (navigator.geolocation) {
+    const locationBtn = L.control({ position: 'topright' });
+    locationBtn.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom');
+        div.innerHTML = '<i class="fas fa-crosshairs" style="line-height: 26px; text-align: center; width: 26px; height: 26px; display: block; color: #333;"></i>';
+        div.style.backgroundColor = 'white';
+        div.style.cursor = 'pointer';
+        div.title = 'Find my location';
+        
+        div.onclick = function() {
+            navigator.geolocation.getCurrentPosition(function(position) {
+                const userLat = position.coords.latitude;
+                const userLng = position.coords.longitude;
+                
+                // Add user location marker
+                const userIcon = L.divIcon({
+                    html: '<div style="background-color: #007bff; width: 16px; height: 16px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                });
+                
+                L.marker([userLat, userLng], { icon: userIcon })
+                    .addTo(map)
+                    .bindPopup('<b>Your Location</b>')
+                    .openPopup();
+                
+                map.setView([userLat, userLng], 14);
+            });
+        };
+        
+        return div;
+    };
+    locationBtn.addTo(map);
+}
+</script>
+{% endblock %}
